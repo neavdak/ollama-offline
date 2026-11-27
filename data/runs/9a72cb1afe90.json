@@ -1,0 +1,163 @@
+{
+  "run_id": "9a72cb1afe90",
+  "prompt": "Search the internet for the official FastAPI documentation URL and tell me in 2 sentences what FastAPI is.",
+  "mode": "fast",
+  "requested_model": "auto",
+  "effective_model": "qwen3.5:9b",
+  "think": false,
+  "auto_approve": true,
+  "workspace_dir": "/Users/tomtomji/prrojects/ollama offline/workspace",
+  "status": "completed",
+  "focus": "Completed",
+  "plan": [],
+  "artifacts": [],
+  "final_answer": "The official FastAPI documentation is at **https://fastapi.tiangolo.com/**.\n\nFastAPI is a modern, high-performance web framework for building APIs with Python 3.6+ based on standard Python type hints. It's one of the fastest Python frameworks available, offering automatic interactive API documentation and validation out of the box.",
+  "error": "",
+  "created_at": 1795615582.566865,
+  "updated_at": 1795615610.1647801,
+  "metrics": {
+    "duration_sec": 27.6,
+    "output_tokens": 97,
+    "tool_calls": 1
+  },
+  "events": [
+    {
+      "id": "916a494595",
+      "type": "user_message",
+      "ts": 1795615582.566879,
+      "data": {
+        "content": "Search the internet for the official FastAPI documentation URL and tell me in 2 sentences what FastAPI is."
+      }
+    },
+    {
+      "id": "675c53fbc8",
+      "type": "status",
+      "ts": 1795615582.567574,
+      "data": {
+        "status": "running",
+        "focus": "Running qwen3.5:9b (fast)",
+        "model": "qwen3.5:9b"
+      }
+    },
+    {
+      "id": "19c67ac7aa",
+      "type": "tool_call",
+      "ts": 1795615598.299531,
+      "data": {
+        "call_id": "877448cb",
+        "tool": "web_search",
+        "arguments": {
+          "query": "official FastAPI documentation URL"
+        }
+      }
+    },
+    {
+      "id": "64c279dbca",
+      "type": "tool_result",
+      "ts": 1795615601.382176,
+      "data": {
+        "call_id": "877448cb",
+        "tool": "web_search",
+        "result": {
+          "query": "official FastAPI documentation URL",
+          "count": 6,
+          "results": [
+            {
+              "title": "FastAPI - FastAPI",
+              "url": "https://fastapi.tiangolo.com/",
+              "snippet": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. Use the official FastAPI skill for your installed version. Install it from your project directory: See Develop with AI. The key features are:",
+              "source": "ddgs"
+            },
+            {
+              "title": "Metadata and Docs URLs - FastAPI - tiangoloFast-API DocumentationDevDocs — FastAPI documentationfastapi.org - FastAPI Official Community Python Web Framework ...Home - FastAPI Tutorialfastapi · PyPI",
+              "url": "https://fastapi.tiangolo.com/tutorial/metadata/",
+              "snippet": "You can set the following fields that are used in the OpenAPI specification and the automatic API docs UIs: You can set them as follows: With this configuration, the automatic API docs would look like: See full list on fastapi.tiangolo.com Since OpenAPI 3.1.0 and FastAPI 0.99.0, you can also set the license_info with an identifier instead of a url. For example: See full list on fastapi.tiangolo.com You can also add additional metadata for the different tags used to group your path operations with the parameter openapi_tags. It takes a list containing one dictionary for each tag. Each dictionary can contain: 1. name (required): a str with the same tag name you use in the tags parameter in your path operations and APIRouters. 2. description: a ... See full list on fastapi.tiangolo.com By default, the OpenAPI schema is served at /openapi.json. But you can configure it with the parameter openapi_url. For example, to set it to be served at /api/v1/openapi.json: If you want to disable the OpenAPI schema completely you can set openapi_url=None, that will also disable the documentation user interfaces that use it. See full list on fastapi.tiangolo.com You can configure the two documentation user interfaces included: 1. Swagger UI: served at /docs. 1.1. You can set its URL with the parameter docs_url. 1.2. You can disable it by setting docs_url=None. 2. ReDoc: served at /redoc. 2.1. You can set its URL with the parameter redoc_url. 2.2. You can disable it by setting redoc_url=None. For example, t... See full list on fastapi.tiangolo.com Supports mainstream models such as OpenAI · Claude · Gemini · DeepSeek, unified interface, stable and high-speed. Fully compatible with the OpenAI API format, one set of code to call multiple models, no need to interface with different providers separately. FastAPI 0.141.1 API documentation with instant search, offline support, keyboard shortcuts, mobile version, and more. fastapi.org is the official FastAPI community hub featuring comprehensive documentation, tutorials, and resources for the modern Python web framework. Build high-performance APIs with automatic OpenAPI documentation. FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints. Historically, async work in Python has been nontrivial (though its API has rapidly improved since Python 3.4) particularly with Flask. Dec 10, 2018 · FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available.",
+              "source": "ddgs"
+            },
+            {
+              "title": "DevDocs — FastAPI documentation",
+              "url": "https://devdocs.io/fastapi/",
+              "snippet": "FastAPI 0.141.1 API documentation with instant search, offline support, keyboard shortcuts, mobile version, and more.",
+              "source": "ddgs"
+            },
+            {
+              "title": "fastapi.org - FastAPI Official Community Python Web Framework ...",
+              "url": "https://fastapi.org/",
+              "snippet": "fastapi.org is the official FastAPI community hub featuring comprehensive documentation, tutorials, and resources for the modern Python web framework. Build high-performance APIs with automatic OpenAPI documentation.",
+              "source": "ddgs"
+            },
+            {
+              "title": "Home - FastAPI Tutorial",
+              "url": "https://fastapi-tutorial.readthedocs.io/",
+              "snippet": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints. Historically, async work in Python has been nontrivial (though its API has rapidly improved since Python 3.4) particularly with Flask.",
+              "source": "ddgs"
+            },
+            {
+              "title": "fastapi · PyPI",
+              "url": "https://pypi.org/project/fastapi/",
+              "snippet": "Dec 10, 2018 · FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available.",
+              "source": "ddgs"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3bdd3c73ad",
+      "type": "assistant_message",
+      "ts": 1795615610.164753,
+      "data": {
+        "turn_id": "turn-2-d65c27",
+        "content": "The official FastAPI documentation is at **https://fastapi.tiangolo.com/**.\n\nFastAPI is a modern, high-performance web framework for building APIs with Python 3.6+ based on standard Python type hints. It's one of the fastest Python frameworks available, offering automatic interactive API documentation and validation out of the box."
+      }
+    },
+    {
+      "id": "d9947c1741",
+      "type": "done",
+      "ts": 1795615610.1647758,
+      "data": {
+        "status": "completed",
+        "final_answer": "The official FastAPI documentation is at **https://fastapi.tiangolo.com/**.\n\nFastAPI is a modern, high-performance web framework for building APIs with Python 3.6+ based on standard Python type hints. It's one of the fastest Python frameworks available, offering automatic interactive API documentation and validation out of the box.",
+        "metrics": {
+          "duration_sec": 27.6,
+          "output_tokens": 97,
+          "tool_calls": 1
+        }
+      }
+    }
+  ],
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are LocalGravity, a fast, pragmatic Antigravity-style autonomous agent running on a local server with live internet access and workspace tools.\nAvailable local Ollama models: qwen3.5:9b, qwen2.5-coder:7b.\nWorkspace root: /Users/tomtomji/prrojects/ollama offline/workspace\n\nCore workflow rules:\n1. For current facts, documentation, news, packages, prices, or anything post-training, ALWAYS use `web_search` and `fetch_url` instead of guessing.\n2. Cite the exact URLs and facts you observed in tool outputs. Never fabricate file contents, command outputs, or URLs.\n3. For tasks with 3+ distinct steps, call `update_plan` early and keep step statuses updated (`pending` -> `in_progress` -> `done`).\n4. Call `set_focus` briefly when switching phases so the user sees live progress.\n5. Keep tool arguments precise and concise. Read before editing files. Run tests/commands to verify code changes when applicable.\n6. Use `create_artifact` when producing a substantial report, architecture spec, or deliverable document.\n\nMode: FAST FLOW. Prioritize speed and direct action. Minimize unnecessary steps, search or execute tools immediately, and give a crisp, accurate answer."
+    },
+    {
+      "role": "user",
+      "content": "Search the internet for the official FastAPI documentation URL and tell me in 2 sentences what FastAPI is."
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_7xvj4fsg",
+          "function": {
+            "index": 0,
+            "name": "web_search",
+            "arguments": {
+              "query": "official FastAPI documentation URL"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"query\": \"official FastAPI documentation URL\", \"count\": 6, \"results\": [{\"title\": \"FastAPI - FastAPI\", \"url\": \"https://fastapi.tiangolo.com/\", \"snippet\": \"FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. Use the official FastAPI skill for your installed version. Install it from your project directory: See Develop with AI. The key features are:\", \"source\": \"ddgs\"}, {\"title\": \"Metadata and Docs URLs - FastAPI - tiangoloFast-API DocumentationDevDocs — FastAPI documentationfastapi.org - FastAPI Official Community Python Web Framework ...Home - FastAPI Tutorialfastapi · PyPI\", \"url\": \"https://fastapi.tiangolo.com/tutorial/metadata/\", \"snippet\": \"You can set the following fields that are used in the OpenAPI specification and the automatic API docs UIs: You can set them as follows: With this configuration, the automatic API docs would look like: See full list on fastapi.tiangolo.com Since OpenAPI 3.1.0 and FastAPI 0.99.0, you can also set the license_info with an identifier instead of a url. For example: See full list on fastapi.tiangolo.com You can also add additional metadata for the different tags used to group your path operations with the parameter openapi_tags. It takes a list containing one dictionary for each tag. Each dictionary can contain: 1. name (required): a str with the same tag name you use in the tags parameter in your path operations and APIRouters. 2. description: a ... See full list on fastapi.tiangolo.com By default, the OpenAPI schema is served at /openapi.json. But you can configure it with the parameter openapi_url. For example, to set it to be served at /api/v1/openapi.json: If you want to disable the OpenAPI schema completely you can set openapi_url=None, that will also disable the documentation user interfaces that use it. See full list on fastapi.tiangolo.com You can configure the two documentation user interfaces included: 1. Swagger UI: served at /docs. 1.1. You can set its URL with the parameter docs_url. 1.2. You can disable it by setting docs_url=None. 2. ReDoc: served at /redoc. 2.1. You can set its URL with the parameter redoc_url. 2.2. You can disable it by setting redoc_url=None. For example, t... See full list on fastapi.tiangolo.com Supports mainstream models such as OpenAI · Claude · Gemini · DeepSeek, unified interface, stable and high-speed. Fully compatible with the OpenAI API format, one set of code to call multiple models, no need to interface with different providers separately. FastAPI 0.141.1 API documentation with instant search, offline support, keyboard shortcuts, mobile version, and more. fastapi.org is the official FastAPI community hub featuring comprehensive documentation, tutorials, and resources for the modern Python web framework. Build high-performance APIs with automatic OpenAPI documentation. FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints. Historically, async work in Python has been nontrivial (though its API has rapidly improved since Python 3.4) particularly with Flask. Dec 10, 2018 · FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available.\", \"source\": \"ddgs\"}, {\"title\": \"DevDocs — FastAPI documentation\", \"url\": \"https://devdocs.io/fastapi/\", \"snippet\": \"FastAPI 0.141.1 API documentation with instant search, offline support, keyboard shortcuts, mobile version, and more.\", \"source\": \"ddgs\"}, {\"title\": \"fastapi.org - FastAPI Official Community Python Web Framework ...\", \"url\": \"https://fastapi.org/\", \"snippet\": \"fastapi.org is the official FastAPI community hub featuring comprehensive documentation, tutorials, and resources for the modern Python web framework. Build high-performance APIs with automatic OpenAPI documentation.\", \"source\": \"ddgs\"}, {\"title\": \"Home - FastAPI Tutorial\", \"url\": \"https://fastapi-tutorial.readthedocs.io/\", \"snippet\": \"FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints. Historically, async work in Python has been nontrivial (though its API has rapidly improved since Python 3.4) particularly with Flask.\", \"source\": \"ddgs\"}, {\"title\": \"fastapi · PyPI\", \"url\": \"https://pypi.org/project/fastapi/\", \"snippet\": \"Dec 10, 2018 · FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available.\", \"source\": \"ddgs\"}]}"
+    },
+    {
+      "role": "assistant",
+      "content": "The official FastAPI documentation is at **https://fastapi.tiangolo.com/**.\n\nFastAPI is a modern, high-performance web framework for building APIs with Python 3.6+ based on standard Python type hints. It's one of the fastest Python frameworks available, offering automatic interactive API documentation and validation out of the box."
+    }
+  ]
+}

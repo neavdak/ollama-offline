@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LocalGravity — Ollama Agentic Workflow Server</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --panel: #121722;
+      --panel-2: #171d2b;
+      --border: #252e42;
+      --text: #e6ecf5;
+      --muted: #8b98b0;
+      --accent: #6ee7b7;
+      --accent-2: #60a5fa;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+    }
+    .sidebar, .inspector {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .inspector {
+      border-right: none;
+      border-left: 1px solid var(--border);
+    }
+    .header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+    }
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+    .dot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--muted);
+    }
+    .badge.ok { color: var(--accent); border-color: rgba(110,231,183,0.35); }
+    .badge.blue { color: var(--accent-2); border-color: rgba(96,165,250,0.35); }
+    .badge.warn { color: var(--warn); border-color: rgba(251,191,36,0.35); }
+    .badge.err { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+
+    .section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+    .btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .btn:hover { border-color: var(--accent-2); }
+    .btn.primary {
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+    .btn.sm { padding: 4px 9px; font-size: 12px; }
+
+    .mode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .mode-pill {
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .mode-pill.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(110, 231, 183, 0.08);
+      font-weight: 600;
+    }
+    select, input[type="text"], textarea {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent-2); }
+
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: var(--text); margin-top: 8px;
+    }
+
+    .run-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .run-item {
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: var(--bg);
+      cursor: pointer;
+      transition: 0.12s;
+    }
+    .run-item:hover { border-color: var(--border); }
+    .run-item.active { border-color: var(--accent-2); background: var(--panel-2); }
+    .run-title {
+      font-size: 13px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .run-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+    /* Center main stream */
+    .main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at top right, rgba(37,99,235,0.06), transparent 40%), var(--bg);
+    }
+    .topbar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(18, 23, 34, 0.75);
+      backdrop-filter: blur(8px);
+    }
+    .focus-pill {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--accent);
+      background: rgba(110, 231, 183, 0.08);
+      border: 1px solid rgba(110, 231, 183, 0.25);
+      padding: 4px 12px; border-radius: 999px;
+      max-width: 480px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .empty-state {
+      margin: auto;
+      max-width: 560px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state h2 { color: var(--text); margin-bottom: 8px; font-size: 22px; }
+    .starter-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; text-align: left;
+    }
+    .starter-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px; cursor: pointer; font-size: 12.5px; color: var(--text);
+    }
+    .starter-card:hover { border-color: var(--accent); }
+    .starter-card small { display: block; color: var(--muted); margin-top: 4px; }
+
+    .msg-user {
+      align-self: flex-end;
+      max-width: 78%;
+      background: #1d2b44;
+      border: 1px solid #2e4369;
+      padding: 11px 15px;
+      border-radius: 12px 12px 2px 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .msg-assistant {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .msg-assistant pre {
+      background: #080b10;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+    .msg-assistant code { font-family: var(--mono); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+    .msg-assistant pre code { background: none; padding: 0; }
+    .msg-assistant a { color: var(--accent-2); }
+
+    .tool-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent-2);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12.5px;
+    }
+    .tool-card.subagent { border-left-color: #c084fc; }
+    .tool-card.thinking { border-left-color: var(--muted); opacity: 0.85; }
+    .tool-head {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; font-weight: 600;
+    }
+    .tool-body {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: #cbd5e1;
+      background: var(--bg);
+      padding: 8px;
+      border-radius: 6px;
+      max-height: 240px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .approval-box {
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .approval-actions { display: flex; gap: 8px; }
+
+    .composer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .composer textarea {
+      resize: none;
+      min-height: 46px;
+      max-height: 150px;
+      line-height: 1.4;
+    }
+
+    /* Right inspector */
+    .inspector-scroll { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 16px; }
+    .step-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12.5px; padding: 6px 8px; border-radius: 6px; background: var(--bg); margin-bottom: 5px;
+    }
+    .step-icon { font-size: 13px; width: 16px; flex-shrink: 0; }
+    .artifact-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 10px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px;
+    }
+    .artifact-item:hover { border-color: var(--accent); }
+    .kv { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: var(--muted); }
+    .kv strong { color: var(--text); }
+    .code-snippet {
+      font-family: var(--mono); font-size: 11px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px; padding: 9px;
+      white-space: pre-wrap; color: #94a3b8; overflow-x: auto;
+    }
+    .log-box {
+      font-family: var(--mono); font-size: 10.8px; line-height: 1.45;
+      background: #070a0f; border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px; height: 190px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+    }
+    .log-line { margin-bottom: 3px; color: #94a3b8; }
+    .log-line.INFO { color: #cbd5e1; }
+    .log-line.WARNING { color: var(--warn); }
+    .log-line.ERROR { color: var(--danger); }
+
+    /* Modal for artifacts */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: none; align-items: center; justify-content: center; z-index: 50;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(820px, 92vw); max-height: 84vh;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-body { padding: 16px 20px; overflow-y: auto; font-size: 13.5px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="header">
+      <div class="brand"><span id="ollamaDot" class="dot"></span> LocalGravity</div>
+      <span id="ollamaVersion" class="badge">Connecting...</span>
+    </div>
+
+    <div class="section">
+      <button class="btn primary" style="width:100%" onclick="newWorkflow()">+ New Workflow</button>
+    </div>
+
+    <div class="section">
+      <div class="label">Flow Mode</div>
+      <div class="mode-grid" id="modeGrid">
+        <div class="mode-pill active" data-mode="auto" onclick="selectMode('auto')">Auto</div>
+        <div class="mode-pill" data-mode="fast" onclick="selectMode('fast')">Fast</div>
+        <div class="mode-pill" data-mode="deep" onclick="selectMode('deep')">Deep</div>
+        <div class="mode-pill" data-mode="coder" onclick="selectMode('coder')">Coder</div>
+      </div>
+
+      <div class="label" style="margin-top:10px">Ollama Model</div>
+      <select id="modelSelect">
+        <option value="auto">Auto (Smart Router)</option>
+      </select>
+
+      <div class="label" style="margin-top:10px">Workspace Path</div>
+      <input type="text" id="workspaceInput" placeholder="./workspace" />
+
+      <div class="toggle-row">
+        <span>Auto-Approve Tools (Fast Flow)</span>
+        <input type="checkbox" id="autoApproveCheck" checked />
+      </div>
+    </div>
+
+    <div class="section" style="padding-bottom:6px;border-bottom:none;">
+      <div class="label">Workflow History</div>
+    </div>
+    <div class="run-list" id="runList"></div>
+  </aside>
+
+  <!-- Center Stream -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="activeModelBadge" class="badge blue">Ready</span>
+        <span id="activeModeBadge" class="badge">auto</span>
+        <span id="activeStatusBadge" class="badge">idle</span>
+      </div>
+      <div id="focusPill" class="focus-pill" style="display:none">
+        <span class="dot" style="width:7px;height:7px;"></span>
+        <span id="focusText">Working...</span>
+      </div>
+      <div>
+        <button id="cancelBtn" class="btn danger sm" style="display:none" onclick="cancelActiveRun()">Stop</button>
+      </div>
+    </div>
+
+    <div class="stream" id="stream">
+      <div class="empty-state" id="emptyState">
+        <h2>LocalGravity Agent Server</h2>
+        <p>Your local Ollama models connected to the live internet in an Antigravity-style fast workflow.</p>
+        <div class="starter-grid">
+          <div class="starter-card" onclick="useStarter('Search the internet for the latest Python 3.15 or FastAPI features and summarize key highlights with source URLs.', 'fast')">
+            <strong>Live Internet Research (Fast)</strong>
+            <small>Uses qwen3.5:9b in non-thinking Fast Flow with live web_search + fetch_url.</small>
+          </div>
+          <div class="starter-card" onclick="useStarter('Create a clean Python CLI script in the workspace called weather_check.py that fetches weather from wttr.in JSON API and test it.', 'coder')">
+            <strong>Coder Flow + Verification</strong>
+            <small>Routes to qwen2.5-coder:7b to write workspace code and run verification tests.</small>
+          </div>
+          <div class="starter-card" onclick="useStarter('Plan and build a small REST health monitor script in Python, research best practices online, delegate coding to coder subagent, and save a summary artifact.', 'deep')">
+            <strong>Deep Agent + Subagent</strong>
+            <small>qwen3.5:9b plans with thinking enabled and delegates coding to qwen2.5-coder:7b.</small>
+          </div>
+          <div class="starter-card" onclick="useStarter('List the files currently in my workspace and check git status if initialized.', 'fast')">
+            <strong>Workspace Inspection</strong>
+            <small>Instant local file & command inspection inside your configured workspace.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <textarea id="promptInput" rows="2" placeholder="Give the agent a task (internet research, coding, server automation)... Press Cmd/Ctrl+Enter to run"></textarea>
+      <button id="sendBtn" class="btn primary" onclick="submitPrompt()">Run Flow</button>
+    </div>
+  </main>
+
+  <!-- Right Inspector -->
+  <aside class="inspector">
+    <div class="header">
+      <span style="font-weight:600;font-size:13.5px;">Mission Control</span>
+      <span class="badge ok">Internet Connected</span>
+    </div>
+    <div class="inspector-scroll">
+      <div>
+        <div class="label">Live Task Plan</div>
+        <div id="planContainer"><span style="font-size:12px;color:var(--muted)">No active plan steps yet.</span></div>
+      </div>
+
+      <div>
+        <div class="label">Artifacts</div>
+        <div id="artifactsContainer"><span style="font-size:12px;color:var(--muted)">No artifacts generated yet.</span></div>
+      </div>
+
+      <div>
+        <div class="label">Run Metrics</div>
+        <div id="metricsContainer">
+          <div class="kv"><span>Duration</span><strong>—</strong></div>
+          <div class="kv"><span>Output Tokens</span><strong>—</strong></div>
+          <div class="kv"><span>Tool Calls</span><strong>—</strong></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">Live Server Logs</div>
+        <div class="log-box" id="liveLogBox"><div class="log-line">Waiting for server logs...</div></div>
+      </div>
+
+      <div>
+        <div class="label">Server API Endpoint</div>
+        <div class="code-snippet">curl -X POST http://127.0.0.1:8080/api/workflows/run \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Search latest AI news","mode":"fast"}'</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Artifact Modal -->
+  <div class="modal-backdrop" id="artifactModal" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="header">
+        <strong id="modalTitle">Artifact</strong>
+        <div style="display:flex;gap:8px;">
+          <a id="modalDownload" class="btn sm" download>Download</a>
+          <button class="btn sm" onclick="closeModal()">Close</button>
+        </div>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    let selectedMode = 'auto';
+    let activeRunId = null;
+    let activeRunStatus = 'idle';
+    let eventSource = null;
+    let streamingBubble = null;
+    let streamingThinking = null;
+    let currentTurnBuffer = '';
+    let currentThinkBuffer = '';
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // Minimal safe markdown renderer
+    function renderMd(md) {
+      let text = esc(md || '');
+      text = text.replace(/```([\w-]*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code}</code></pre>`);
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      text = text.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+      text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+      text = text.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+      text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+      text = text.replace(/\n/g, '<br/>');
+      return text;
+    }
+
+    function selectMode(mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.mode-pill').forEach(el => {
+        el.classList.toggle('active', el.dataset.mode === mode);
+      });
+    }
+
+    function useStarter(text, mode) {
+      selectMode(mode);
+      document.getElementById('promptInput').value = text;
+      submitPrompt();
+    }
+
+    async function loadHealthAndModels() {
+      try {
+        const [hRes, mRes] = await Promise.all([fetch('/api/health'), fetch('/api/models')]);
+        const health = await hRes.json();
+        const dot = document.getElementById('ollamaDot');
+        const ver = document.getElementById('ollamaVersion');
+        if (health.ollama && health.ollama.ok) {
+          dot.classList.remove('offline');
+          ver.textContent = 'Ollama v' + health.ollama.version;
+          ver.className = 'badge ok';
+        } else {
+          dot.classList.add('offline');
+          ver.textContent = 'Ollama Offline';
+          ver.className = 'badge err';
+        }
+        const wsInput = document.getElementById('workspaceInput');
+        if (!wsInput.value && health.workspace_dir) wsInput.value = health.workspace_dir;
+
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          const sel = document.getElementById('modelSelect');
+          const cur = sel.value;
+          sel.innerHTML = '<option value="auto">Auto (Smart Router)</option>';
+          for (const m of (mData.models || [])) {
+            const opt = document.createElement('option');
+            opt.value = m.name;
+            const tags = [];
+            if (m.supports_tools) tags.push('tools');
+            if (m.supports_thinking) tags.push('think');
+            opt.textContent = `${m.name} (${m.size_gb}GB · ${tags.join('/')})`;
+            sel.appendChild(opt);
+          }
+          if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadRuns() {
+      const res = await fetch('/api/runs');
+      const data = await res.json();
+      const list = document.getElementById('runList');
+      list.innerHTML = '';
+      for (const r of (data.runs || [])) {
+        const div = document.createElement('div');
+        div.className = 'run-item' + (r.run_id === activeRunId ? ' active' : '');
+        div.onclick = () => openRun(r.run_id);
+        div.innerHTML = `
+          <div class="run-title">${esc(r.prompt)}</div>
+          <div class="run-meta">
+            <span>${esc(r.effective_model || r.mode)}</span>
+            <span>${esc(r.status)}</span>
+          </div>`;
+        list.appendChild(div);
+      }
+    }
+
+    function newWorkflow() {
+      if (eventSource) { eventSource.close(); eventSource = null; }
+      activeRunId = null;
+      activeRunStatus = 'idle';
+      streamingBubble = null;
+      streamingThinking = null;
+      document.getElementById('stream').innerHTML = '';
+      location.reload();
+    }
+
+    function clearEmptyState() {
+      const es = document.getElementById('emptyState');
+      if (es) es.remove();
+    }
+
+    function appendEl(el) {
+      clearEmptyState();
+      const stream = document.getElementById('stream');
+      stream.appendChild(el);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function setFocus(text, active) {
+      const pill = document.getElementById('focusPill');
+      if (!active || !text) { pill.style.display = 'none'; return; }
+      pill.style.display = 'flex';
+      document.getElementById('focusText').textContent = text;
+    }
+
+    function renderPlan(steps) {
+      const el = document.getElementById('planContainer');
+      if (!steps || !steps.length) {
+        el.innerHTML = '<span style="font-size:12px;color:var(--muted)">No active plan steps yet.</span>';
+        return;
+      }
+      const icons = { pending: '○', in_progress: '◐', done: '●', failed: '✕' };
+      const colors = { pending: '#8b98b0', in_progress: '#60a5fa', done: '#6ee7b7', failed: '#f87171' };
+      el.innerHTML = steps.map(s => `
+        <div class="step-item">
+          <span class="step-icon" style="color:${colors[s.status] || '#8b98b0'}">${icons[s.status] || '○'}</span>
+          <span>${esc(s.title)}</span>
+        </div>`).join('');
+    }
+
+    function renderArtifacts(artifacts) {
+      const el = document.getElementById('artifactsContainer');
+      if (!artifacts || !artifacts.length) {
+        el.innerHTML = '<span style="font-size:12px;color:var(--muted)">No artifacts generated yet.</span>';
+        return;
+      }
+      el.innerHTML = '';
+      for (const a of artifacts) {
+        const div = document.createElement('div');
+        div.className = 'artifact-item';
+        div.innerHTML = `<span>📄 ${esc(a.title || a.filename)}</span><span class="badge">${a.bytes} B</span>`;
+        div.onclick = () => openArtifactModal(a);
+        el.appendChild(div);
+      }
+    }
+
+    function renderMetrics(m) {
+      const el = document.getElementById('metricsContainer');
+      el.innerHTML = `
+        <div class="kv"><span>Duration</span><strong>${m?.duration_sec != null ? m.duration_sec + 's' : '—'}</strong></div>
+        <div class="kv"><span>Output Tokens</span><strong>${m?.output_tokens ?? '—'}</strong></div>
+        <div class="kv"><span>Tool Calls</span><strong>${m?.tool_calls ?? '—'}</strong></div>
+      `;
+    }
+
+    function openArtifactModal(a) {
+      document.getElementById('modalTitle').textContent = a.title || a.filename;
+      document.getElementById('modalBody').innerHTML = renderMd(a.content || '');
+      const dl = document.getElementById('modalDownload');
+      dl.href = `/api/runs/${activeRunId}/artifacts/${encodeURIComponent(a.filename)}`;
+      dl.download = a.filename;
+      document.getElementById('artifactModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('artifactModal').classList.remove('open');
+    }
+
+    function updateHeaderBadges(run) {
+      activeRunStatus = run.status;
+      document.getElementById('activeModelBadge').textContent = run.effective_model || 'auto';
+      document.getElementById('activeModeBadge').textContent = run.mode + (run.think ? ' · think' : ' · fast');
+      const sb = document.getElementById('activeStatusBadge');
+      sb.textContent = run.status;
+      sb.className = 'badge ' + (run.status === 'completed' ? 'ok' : run.status === 'failed' ? 'err' : run.status === 'waiting_approval' ? 'warn' : 'blue');
+      const running = ['queued', 'running', 'waiting_approval'].includes(run.status);
+      document.getElementById('cancelBtn').style.display = running ? 'inline-block' : 'none';
+      setFocus(run.focus, running);
+    }
+
+    function handleEvent(evt) {
+      const { type, data } = evt;
+      if (type === 'user_message') {
+        const div = document.createElement('div');
+        div.className = 'msg-user';
+        div.textContent = data.content;
+        appendEl(div);
+      } else if (type === 'focus') {
+        setFocus(data.status, true);
+      } else if (type === 'status') {
+        activeRunStatus = data.status;
+        document.getElementById('activeStatusBadge').textContent = data.status;
+        const running = ['queued', 'running', 'waiting_approval'].includes(data.status);
+        document.getElementById('cancelBtn').style.display = running ? 'inline-block' : 'none';
+        setFocus(data.focus, running);
+      } else if (type === 'plan') {
+        renderPlan(data.steps);
+      } else if (type === 'artifact') {
+        fetch(`/api/runs/${activeRunId}`).then(r => r.json()).then(d => renderArtifacts(d.run.artifacts));
+      } else if (type === 'thinking_delta') {
+        if (!streamingThinking) {
+          currentThinkBuffer = '';
+          streamingThinking = document.createElement('div');
+          streamingThinking.className = 'tool-card thinking';
+          streamingThinking.innerHTML = `<div class="tool-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>💭 Reasoning</span><span>toggle</span></div><div class="tool-body"></div>`;
+          appendEl(streamingThinking);
+        }
+        currentThinkBuffer += data.delta;
+        streamingThinking.querySelector('.tool-body').textContent = currentThinkBuffer;
+      } else if (type === 'thinking_complete') {
+        if (streamingThinking) {
+          streamingThinking.querySelector('.tool-body').style.display = 'none';
+          streamingThinking = null;
+        } else {
+          const card = document.createElement('div');
+          card.className = 'tool-card thinking';
+          card.innerHTML = `<div class="tool-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>💭 Reasoning</span><span>toggle</span></div><div class="tool-body" style="display:none">${esc(data.content)}</div>`;
+          appendEl(card);
+        }
+      } else if (type === 'content_delta') {
+        if (!streamingBubble) {
+          currentTurnBuffer = '';
+          streamingBubble = document.createElement('div');
+          streamingBubble.className = 'msg-assistant';
+          appendEl(streamingBubble);
+        }
+        currentTurnBuffer += data.delta;
+        streamingBubble.innerHTML = renderMd(currentTurnBuffer);
+        const s = document.getElementById('stream');
+        s.scrollTop = s.scrollHeight;
+      } else if (type === 'assistant_message') {
+        if (streamingBubble) {
+          streamingBubble.innerHTML = renderMd(data.content);
+          streamingBubble = null;
+        } else if (data.content) {
+          const div = document.createElement('div');
+          div.className = 'msg-assistant';
+          div.innerHTML = renderMd(data.content);
+          appendEl(div);
+        }
+      } else if (type === 'tool_call') {
+        streamingBubble = null;
+        const card = document.createElement('div');
+        card.className = 'tool-card';
+        card.id = 'tool-' + data.call_id;
+        card.innerHTML = `
+          <div class="tool-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span>⚡ ${esc(data.tool)}</span>
+            <span class="badge blue" id="badge-${data.call_id}">running</span>
+          </div>
+          <div class="tool-body" style="display:none">${esc(JSON.stringify(data.arguments, null, 2))}</div>`;
+        appendEl(card);
+      } else if (type === 'tool_result') {
+        const badge = document.getElementById('badge-' + data.call_id);
+        const card = document.getElementById('tool-' + data.call_id);
+        if (badge) {
+          const hasErr = Boolean(data.result && data.result.error);
+          badge.textContent = hasErr ? 'error' : 'done';
+          badge.className = 'badge ' + (hasErr ? 'err' : 'ok');
+        }
+        if (card) {
+          const body = card.querySelector('.tool-body');
+          body.textContent += '\n\n--- RESULT ---\n' + JSON.stringify(data.result, null, 2);
+        }
+      } else if (type === 'subagent_start') {
+        const card = document.createElement('div');
+        card.className = 'tool-card subagent';
+        card.innerHTML = `<div class="tool-head"><span>🤖 Subagent [${esc(data.role)}] · ${esc(data.model)}</span><span class="badge blue">started</span></div><div class="tool-body">${esc(data.task)}</div>`;
+        appendEl(card);
+      } else if (type === 'subagent_done') {
+        const card = document.createElement('div');
+        card.className = 'tool-card subagent';
+        card.innerHTML = `<div class="tool-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>🤖 Subagent [${esc(data.role)}] finished</span><span class="badge ok">done</span></div><div class="tool-body" style="display:none">${esc(data.result)}</div>`;
+        appendEl(card);
+      } else if (type === 'approval_required') {
+        const box = document.createElement('div');
+        box.className = 'approval-box';
+        box.id = 'approval-' + data.approval_id;
+        box.innerHTML = `
+          <strong>Approval required: <code>${esc(data.tool)}</code></strong>
+          <div class="tool-body" style="max-height:140px">${esc(JSON.stringify(data.arguments, null, 2))}</div>
+          <div class="approval-actions">
+            <button class="btn primary sm" onclick="sendApproval('${data.approval_id}', true)">Approve & Continue</button>
+            <button class="btn danger sm" onclick="sendApproval('${data.approval_id}', false)">Deny</button>
+          </div>`;
+        appendEl(box);
+      } else if (type === 'approval_resolved') {
+        const box = document.getElementById('approval-' + data.approval_id);
+        if (box) box.innerHTML = `<span>${data.approved ? '✅ Approved' : '❌ Denied'}: <code>${esc(data.tool)}</code></span>`;
+      } else if (type === 'done') {
+        activeRunStatus = 'completed';
+        document.getElementById('activeStatusBadge').textContent = 'completed';
+        document.getElementById('activeStatusBadge').className = 'badge ok';
+        document.getElementById('cancelBtn').style.display = 'none';
+        setFocus('', false);
+        renderMetrics(data.metrics);
+        loadRuns();
+      } else if (type === 'error') {
+        activeRunStatus = 'failed';
+        document.getElementById('activeStatusBadge').textContent = 'failed';
+        document.getElementById('activeStatusBadge').className = 'badge err';
+        document.getElementById('cancelBtn').style.display = 'none';
+        setFocus('', false);
+        const div = document.createElement('div');
+        div.className = 'tool-card';
+        div.style.borderLeftColor = 'var(--danger)';
+        div.textContent = 'Error: ' + data.error;
+        appendEl(div);
+        loadRuns();
+      }
+    }
+
+    async function sendApproval(approvalId, approved) {
+      await fetch(`/api/runs/${activeRunId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approval_id: approvalId, approved })
+      });
+    }
+
+    async function cancelActiveRun() {
+      if (!activeRunId) return;
+      await fetch(`/api/runs/${activeRunId}/cancel`, { method: 'POST' });
+    }
+
+    function openRun(runId) {
+      if (eventSource) { eventSource.close(); eventSource = null; }
+      activeRunId = runId;
+      streamingBubble = null;
+      streamingThinking = null;
+      document.getElementById('stream').innerHTML = '';
+      loadRuns();
+
+      eventSource = new EventSource(`/api/runs/${runId}/stream`);
+      const handle = (e) => {
+        const payload = JSON.parse(e.data);
+        if (payload.type === 'snapshot') {
+          const run = payload.data;
+          updateHeaderBadges(run);
+          renderPlan(run.plan);
+          renderArtifacts(run.artifacts);
+          renderMetrics(run.metrics);
+          for (const ev of (run.events || [])) handleEvent(ev);
+        } else {
+          handleEvent(payload);
+        }
+      };
+      ['snapshot','user_message','focus','status','plan','artifact','thinking_delta','thinking_complete','content_delta','assistant_message','tool_call','tool_result','subagent_start','subagent_done','approval_required','approval_resolved','done','error']
+        .forEach(t => eventSource.addEventListener(t, handle));
+    }
+
+    async function submitPrompt() {
+      const input = document.getElementById('promptInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      if (activeRunId && !['queued', 'running', 'waiting_approval'].includes(activeRunStatus)) {
+        const res = await fetch(`/api/runs/${activeRunId}/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        if (res.ok) openRun(activeRunId);
+        return;
+      }
+
+      const payload = {
+        prompt: text,
+        mode: selectedMode,
+        model: document.getElementById('modelSelect').value,
+        auto_approve: document.getElementById('autoApproveCheck').checked,
+        workspace_dir: document.getElementById('workspaceInput').value.trim() || null
+      };
+      const res = await fetch('/api/runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || 'Failed to start workflow');
+        return;
+      }
+      const data = await res.json();
+      openRun(data.run.run_id);
+    }
+
+    document.getElementById('promptInput').addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        submitPrompt();
+      }
+    });
+
+    function appendLogLine(entry) {
+      const box = document.getElementById('liveLogBox');
+      if (box.children.length === 1 && box.children[0].textContent === 'Waiting for server logs...') {
+        box.innerHTML = '';
+      }
+      const div = document.createElement('div');
+      div.className = 'log-line ' + (entry.level || 'INFO');
+      div.textContent = `${entry.time || ''} [${entry.level || 'INFO'}] ${entry.message || ''}`;
+      box.appendChild(div);
+      while (box.children.length > 150) box.removeChild(box.firstChild);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function connectLogStream() {
+      const logSource = new EventSource('/api/logs/stream');
+      logSource.addEventListener('snapshot', e => {
+        const data = JSON.parse(e.data);
+        const box = document.getElementById('liveLogBox');
+        box.innerHTML = '';
+        for (const item of (data.logs || [])) appendLogLine(item);
+      });
+      logSource.addEventListener('log', e => {
+        appendLogLine(JSON.parse(e.data));
+      });
+    }
+
+    loadHealthAndModels();
+    loadRuns();
+    connectLogStream();
+    setInterval(loadHealthAndModels, 15000);
+  </script>
+</body>
+</html>
